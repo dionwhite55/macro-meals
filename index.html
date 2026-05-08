@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macro Meals</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:             #f1f5f9;
+            --surface:        #ffffff;
+            --border:         #e2e8f0;
+            --text-1:         #0f172a;
+            --text-2:         #475569;
+            --text-3:         #94a3b8;
+            --brand:          #6366f1;
+            --brand-hover:    #4f46e5;
+            --brand-light:    #eef2ff;
+            --cal:            #ef4444;
+            --protein:        #3b82f6;
+            --carbs:          #f59e0b;
+            --fat:            #10b981;
+            --morning:        #f97316;
+            --afternoon:      #0ea5e9;
+            --evening:        #8b5cf6;
+            --shadow-sm:      0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md:      0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-lg:      0 20px 48px rgba(0,0,0,0.14), 0 8px 16px rgba(0,0,0,0.06);
+            --radius-sm:      8px;
+            --radius-md:      12px;
+            --radius-lg:      16px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-1);
+            min-height: 100vh;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ── HEADER ───────────────────────────────────────────── */
+        .header {
+            background: #0f172a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .header-inner {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .brand-icon { font-size: 20px; }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+
+        .date-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .date-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+
+        .date-btn:hover { background: rgba(255,255,255,0.14); }
+
+        .date-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.75);
+            min-width: 190px;
+            text-align: center;
+        }
+
+        /* ── MACRO SUMMARY BAR ────────────────────────────────── */
+        .summary-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-bar-inner {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .summary-cell {
+            padding: 14px 8px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+
+        .summary-cell:last-child { border-right: none; }
+
+        .summary-value {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 1px;
+        }
+
+        .summary-value small {
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0.65;
+        }
+
+        .summary-cell.cal .summary-value     { color: var(--cal); }
+        .summary-cell.protein .summary-value { color: var(--protein); }
+        .summary-cell.carbs .summary-value   { color: var(--carbs); }
+        .summary-cell.fat .summary-value     { color: var(--fat); }
+
+        .summary-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-3);
+        }
+
+        /* ── TABS ─────────────────────────────────────────────── */
+        .tabs-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tabs-inner {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+        }
+
+        .tab {
+            padding: 11px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-2);
+            border: none;
+            background: none;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.15s;
+            font-family: inherit;
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--brand);
+            border-radius: 2px 2px 0 0;
+            transform: scaleX(0);
+            transition: transform 0.15s;
+        }
+
+        .tab:hover { color: var(--text-1); }
+        .tab.active { color: var(--brand); }
+        .tab.active::after { transform: scaleX(1); }
+
+        /* ── MAIN ─────────────────────────────────────────────── */
+        .main {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 24px 24px 48px;
+        }
+
+        /* ── TIME SECTIONS ────────────────────────────────────── */
+        .time-section {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .time-section-header {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .morning-section   .time-section-header { border-left: 3px solid var(--morning); }
+        .afternoon-section .time-section-header { border-left: 3px solid var(--afternoon); }
+        .evening-section   .time-section-header { border-left: 3px solid var(--evening); }
+
+        .time-section-header h2 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-1);
+            flex: 1;
+        }
+
+        .section-cal-badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-3);
+        }
+
+        /* ── MEAL LIST ────────────────────────────────────────── */
+        .meal-list { padding: 0 20px; }
+
+        /* ── MEAL ITEMS (dynamically rendered) ────────────────── */
+        .meal-item {
+            padding: 13px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .meal-item:last-child { border-bottom: none; }
+
+        .meal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .meal-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-1);
+            line-height: 1.3;
+        }
+
+        .meal-actions {
+            display: flex;
+            gap: 2px;
+            opacity: 0;
+            transition: opacity 0.15s;
+            flex-shrink: 0;
+        }
+
+        .meal-item:hover .meal-actions { opacity: 1; }
+
+        .icon-btn {
+            width: 27px;
+            height: 27px;
+            border-radius: 6px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+
+        .icon-btn:hover { background: var(--bg); }
+
+        .meal-macros {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 7px;
+        }
+
+        .macro {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .macro-label { color: var(--text-3); font-weight: 500; }
+        .macro-value { color: var(--text-2); font-weight: 600; }
+
+        .meal-notes {
+            margin-top: 5px;
+            font-size: 12px;
+            color: var(--text-3);
+            font-style: italic;
+        }
+
+        .empty-state {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-3);
+            font-size: 13px;
+        }
+
+        /* ── ADD MEAL BUTTON ──────────────────────────────────── */
+        .add-meal-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: calc(100% - 40px);
+            margin: 8px 20px 16px;
+            padding: 9px;
+            border: 1.5px dashed var(--border);
+            border-radius: var(--radius-sm);
+            background: none;
+            color: var(--text-3);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .add-meal-btn:hover {
+            border-color: var(--brand);
+            color: var(--brand);
+            background: var(--brand-light);
+        }
+
+        /* ── FAVORITES ────────────────────────────────────────── */
+        #favoritesView h2 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-1);
+        }
+
+        .favorites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 12px;
+        }
+
+        .favorite-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .favorite-card:hover {
+            border-color: var(--brand);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .favorite-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-1);
+            margin-bottom: 10px;
+            padding-right: 20px;
+            line-height: 1.3;
+        }
+
+        .remove-favorite {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            background: var(--cal);
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.15s;
+            line-height: 1;
+            font-family: inherit;
+        }
+
+        .favorite-card:hover .remove-favorite { opacity: 1; }
+
+        .empty-state-icon {
+            font-size: 38px;
+            margin-bottom: 10px;
+        }
+
+        /* ── MODAL ────────────────────────────────────────────── */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 90%;
+            max-width: 460px;
+            max-height: 86vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-1);
+        }
+
+        .close-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            border: none;
+            background: var(--bg);
+            color: var(--text-2);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+            line-height: 1;
+            font-family: inherit;
+        }
+
+        .close-btn:hover { background: var(--border); }
+
+        /* ── FORM ─────────────────────────────────────────────── */
+        .form-group { margin-bottom: 16px; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: inherit;
+            color: var(--text-1);
+            background: white;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 96px;
+            line-height: 1.5;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 11px;
+            background: var(--brand);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .btn-primary:hover { background: var(--brand-hover); }
+        .btn-primary:active { transform: scale(0.99); }
+
+        .btn-primary:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── LOADING ──────────────────────────────────────────── */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 18px;
+            color: var(--text-2);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* ── CHAT ─────────────────────────────────────────────── */
+        .chat-container {
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-top: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .chat-container h4 {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-3);
+            margin-bottom: 10px;
+        }
+
+        .chat-messages {
+            max-height: 180px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .chat-message {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.4;
+            max-width: 86%;
+        }
+
+        .chat-message.user {
+            background: var(--brand);
+            color: white;
+            align-self: flex-end;
+        }
+
+        .chat-message.assistant {
+            background: white;
+            color: var(--text-1);
+            border: 1px solid var(--border);
+            align-self: flex-start;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input-group input { flex: 1; }
+
+        .chat-send-btn {
+            padding: 8px 14px;
+            background: var(--brand);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+
+        .chat-send-btn:hover { background: var(--brand-hover); }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="brand">
+                <span class="brand-icon">🥗</span>
+                <span class="brand-title">Macro Meals</span>
+            </div>
+            <div class="date-nav">
+                <button class="date-btn" onclick="changeDate(-1)">‹</button>
+                <span id="currentDate" class="date-label"></span>
+                <button class="date-btn" onclick="changeDate(1)">›</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- DAILY MACRO SUMMARY -->
+    <div class="summary-bar">
+        <div class="summary-bar-inner">
+            <div class="summary-cell cal">
+                <div class="summary-value" id="total-calories">0</div>
+                <div class="summary-label">Calories</div>
+            </div>
+            <div class="summary-cell protein">
+                <div class="summary-value"><span id="total-protein">0</span><small>g</small></div>
+                <div class="summary-label">Protein</div>
+            </div>
+            <div class="summary-cell carbs">
+                <div class="summary-value"><span id="total-carbs">0</span><small>g</small></div>
+                <div class="summary-label">Carbs</div>
+            </div>
+            <div class="summary-cell fat">
+                <div class="summary-value"><span id="total-fat">0</span><small>g</small></div>
+                <div class="summary-label">Fat</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs-bar">
+        <div class="tabs-inner">
+            <button class="tab active" onclick="switchTab('daily')">Daily Log</button>
+            <button class="tab" onclick="switchTab('favorites')">Favorites</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+        <div id="dailyView">
+            <div class="time-section morning-section">
+                <div class="time-section-header">
+                    <span>🌅</span>
+                    <h2>Morning</h2>
+                </div>
+                <div class="meal-list" id="morning-meals"></div>
+                <button class="add-meal-btn" onclick="openAddMealModal('morning')">+ Add Meal</button>
+            </div>
+
+            <div class="time-section afternoon-section">
+                <div class="time-section-header">
+                    <span>☀️</span>
+                    <h2>Afternoon</h2>
+                </div>
+                <div class="meal-list" id="afternoon-meals"></div>
+                <button class="add-meal-btn" onclick="openAddMealModal('afternoon')">+ Add Meal</button>
+            </div>
+
+            <div class="time-section evening-section">
+                <div class="time-section-header">
+                    <span>🌙</span>
+                    <h2>Evening</h2>
+                </div>
+                <div class="meal-list" id="evening-meals"></div>
+                <button class="add-meal-btn" onclick="openAddMealModal('evening')">+ Add Meal</button>
+            </div>
+        </div>
+
+        <div id="favoritesView" style="display: none;">
+            <h2>Your Favorite Meals</h2>
+            <div class="favorites-grid" id="favorites-list"></div>
+        </div>
+    </main>
+
+    <!-- ADD MEAL MODAL -->
+    <div class="modal" id="addMealModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Meal</h3>
+                <button class="close-btn" onclick="closeModal('addMealModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>What did you eat?</label>
+                <textarea id="mealDescription" placeholder="e.g., 2 scrambled eggs, spinach, toast with butter"></textarea>
+            </div>
+            <button class="btn-primary" onclick="calculateMacros()" id="calculateBtn">Calculate Macros</button>
+            <div id="calculatingLoader" class="loading" style="display: none;">
+                🤖 Calculating macros…
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT MEAL MODAL -->
+    <div class="modal" id="editMealModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Meal</h3>
+                <button class="close-btn" onclick="closeModal('editMealModal')">&times;</button>
+            </div>
+            <div id="editMealContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let currentTimeBlock = 'morning';
+        let editingMealId = null;
+        let dailyData = {};
+        let favorites = [];
+
+        function init() {
+            loadFromStorage();
+            updateDateDisplay();
+            renderDailyMeals();
+            updateDailySummary();
+            renderFavorites();
+        }
+
+        function loadFromStorage() {
+            const stored = localStorage.getItem('macroTrackerData');
+            if (stored) {
+                dailyData = JSON.parse(stored);
+            }
+            const storedFavorites = localStorage.getItem('macroTrackerFavorites');
+            if (storedFavorites) {
+                favorites = JSON.parse(storedFavorites);
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('macroTrackerData', JSON.stringify(dailyData));
+            localStorage.setItem('macroTrackerFavorites', JSON.stringify(favorites));
+        }
+
+        function getDateKey() {
+            return currentDate.toISOString().split('T')[0];
+        }
+
+        function updateDateDisplay() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = currentDate.toLocaleDateString('en-US', options);
+        }
+
+        function changeDate(delta) {
+            currentDate.setDate(currentDate.getDate() + delta);
+            updateDateDisplay();
+            renderDailyMeals();
+            updateDailySummary();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tab === 'daily') {
+                document.getElementById('dailyView').style.display = 'block';
+                document.getElementById('favoritesView').style.display = 'none';
+            } else {
+                document.getElementById('dailyView').style.display = 'none';
+                document.getElementById('favoritesView').style.display = 'block';
+                renderFavorites();
+            }
+        }
+
+        function openAddMealModal(timeBlock) {
+            currentTimeBlock = timeBlock;
+            document.getElementById('mealDescription').value = '';
+            document.getElementById('addMealModal').classList.add('show');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+        }
+
+        async function calculateMacros() {
+            const description = document.getElementById('mealDescription').value.trim();
+            if (!description) return;
+
+            const btn = document.getElementById('calculateBtn');
+            const loader = document.getElementById('calculatingLoader');
+
+            btn.style.display = 'none';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [{
+                            role: "user",
+                            content: `Analyze this meal and provide nutritional estimates for a typical serving size: "${description}"
+
+Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this exact format:
+{
+  "name": "brief meal name",
+  "calories": number,
+  "protein": number,
+  "carbs": number,
+  "fat": number
+}`
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.content.map(i => i.text || "").join("\n").trim();
+                const macros = JSON.parse(text);
+
+                const dateKey = getDateKey();
+                if (!dailyData[dateKey]) {
+                    dailyData[dateKey] = { morning: [], afternoon: [], evening: [] };
+                }
+
+                const meal = {
+                    id: Date.now().toString(),
+                    ...macros,
+                    originalDescription: description,
+                    notes: '',
+                    isFavorite: false
+                };
+
+                dailyData[dateKey][currentTimeBlock].push(meal);
+                saveToStorage();
+
+                closeModal('addMealModal');
+                renderDailyMeals();
+                updateDailySummary();
+            } catch (error) {
+                alert('Error calculating macros. Please try again.');
+                console.error(error);
+            } finally {
+                btn.style.display = 'block';
+                loader.style.display = 'none';
+            }
+        }
+
+        function renderDailyMeals() {
+            const dateKey = getDateKey();
+            const dayData = dailyData[dateKey] || { morning: [], afternoon: [], evening: [] };
+
+            ['morning', 'afternoon', 'evening'].forEach(timeBlock => {
+                const container = document.getElementById(`${timeBlock}-meals`);
+                const meals = dayData[timeBlock] || [];
+
+                if (meals.length === 0) {
+                    container.innerHTML = '<div class="empty-state" style="padding: 20px;">No meals added yet</div>';
+                    return;
+                }
+
+                container.innerHTML = meals.map(meal => `
+                    <div class="meal-item">
+                        <div class="meal-header">
+                            <div class="meal-name">
+                                ${meal.isFavorite ? '⭐ ' : ''}${meal.name}
+                            </div>
+                            <div class="meal-actions">
+                                <button class="icon-btn" onclick="toggleFavorite('${meal.id}')" title="${meal.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                                    ${meal.isFavorite ? '⭐' : '☆'}
+                                </button>
+                                <button class="icon-btn" onclick="openEditModal('${meal.id}')" title="Edit">✏️</button>
+                                <button class="icon-btn" onclick="deleteMeal('${meal.id}')" title="Delete">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="meal-macros">
+                            <div class="macro">
+                                <span class="macro-label">Cal:</span>
+                                <span class="macro-value">${Math.round(meal.calories)}</span>
+                            </div>
+                            <div class="macro">
+                                <span class="macro-label">P:</span>
+                                <span class="macro-value">${Math.round(meal.protein)}g</span>
+                            </div>
+                            <div class="macro">
+                                <span class="macro-label">C:</span>
+                                <span class="macro-value">${Math.round(meal.carbs)}g</span>
+                            </div>
+                            <div class="macro">
+                                <span class="macro-label">F:</span>
+                                <span class="macro-value">${Math.round(meal.fat)}g</span>
+                            </div>
+                        </div>
+                        ${meal.notes ? `<div class="meal-notes">${meal.notes}</div>` : ''}
+                    </div>
+                `).join('');
+            });
+        }
+
+        function updateDailySummary() {
+            const dateKey = getDateKey();
+            const dayData = dailyData[dateKey] || { morning: [], afternoon: [], evening: [] };
+
+            let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+
+            Object.values(dayData).forEach(meals => {
+                meals.forEach(meal => {
+                    totals.calories += meal.calories;
+                    totals.protein += meal.protein;
+                    totals.carbs += meal.carbs;
+                    totals.fat += meal.fat;
+                });
+            });
+
+            document.getElementById('total-calories').textContent = Math.round(totals.calories);
+            document.getElementById('total-protein').textContent = Math.round(totals.protein);
+            document.getElementById('total-carbs').textContent = Math.round(totals.carbs);
+            document.getElementById('total-fat').textContent = Math.round(totals.fat);
+        }
+
+        function findMeal(mealId) {
+            const dateKey = getDateKey();
+            const dayData = dailyData[dateKey];
+            if (!dayData) return null;
+
+            for (let timeBlock of ['morning', 'afternoon', 'evening']) {
+                const meal = dayData[timeBlock].find(m => m.id === mealId);
+                if (meal) return { meal, timeBlock };
+            }
+            return null;
+        }
+
+        function toggleFavorite(mealId) {
+            const result = findMeal(mealId);
+            if (!result) return;
+
+            result.meal.isFavorite = !result.meal.isFavorite;
+
+            if (result.meal.isFavorite) {
+                const favoriteMeal = { ...result.meal };
+                favorites.push(favoriteMeal);
+            } else {
+                favorites = favorites.filter(f => f.name !== result.meal.name);
+            }
+
+            saveToStorage();
+            renderDailyMeals();
+            renderFavorites();
+        }
+
+        function deleteMeal(mealId) {
+            if (!confirm('Delete this meal?')) return;
+
+            const dateKey = getDateKey();
+            const dayData = dailyData[dateKey];
+            if (!dayData) return;
+
+            for (let timeBlock of ['morning', 'afternoon', 'evening']) {
+                const index = dayData[timeBlock].findIndex(m => m.id === mealId);
+                if (index !== -1) {
+                    dayData[timeBlock].splice(index, 1);
+                    break;
+                }
+            }
+
+            saveToStorage();
+            renderDailyMeals();
+            updateDailySummary();
+        }
+
+        function openEditModal(mealId) {
+            const result = findMeal(mealId);
+            if (!result) return;
+
+            editingMealId = mealId;
+            const meal = result.meal;
+
+            document.getElementById('editMealContent').innerHTML = `
+                <div class="form-group">
+                    <label>Meal Name</label>
+                    <input type="text" id="editName" value="${meal.name}">
+                </div>
+                <div class="form-group">
+                    <label>Calories</label>
+                    <input type="number" id="editCalories" value="${meal.calories}">
+                </div>
+                <div class="form-group">
+                    <label>Protein (g)</label>
+                    <input type="number" id="editProtein" value="${meal.protein}">
+                </div>
+                <div class="form-group">
+                    <label>Carbs (g)</label>
+                    <input type="number" id="editCarbs" value="${meal.carbs}">
+                </div>
+                <div class="form-group">
+                    <label>Fat (g)</label>
+                    <input type="number" id="editFat" value="${meal.fat}">
+                </div>
+                <div class="chat-container">
+                    <h4 style="margin-bottom: 10px;">Chat to adjust</h4>
+                    <div class="chat-messages" id="chatMessages">
+                        ${meal.chatHistory ? meal.chatHistory.map(msg => `
+                            <div class="chat-message ${msg.role}">${msg.content}</div>
+                        `).join('') : ''}
+                    </div>
+                    <div class="chat-input-group">
+                        <input type="text" id="chatInput" placeholder="e.g., I only ate half, or add 1 tbsp olive oil">
+                        <button class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="saveEditedMeal()" style="margin-top: 15px;">Save Changes</button>
+            `;
+
+            document.getElementById('editMealModal').classList.add('show');
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const result = findMeal(editingMealId);
+            if (!result) return;
+
+            const meal = result.meal;
+            if (!meal.chatHistory) meal.chatHistory = [];
+
+            meal.chatHistory.push({ role: 'user', content: message });
+            input.value = '';
+
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `<div class="chat-message user">${message}</div>`;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [
+                            {
+                                role: "user",
+                                content: `Current meal macros:
+- Calories: ${meal.calories}
+- Protein: ${meal.protein}g
+- Carbs: ${meal.carbs}g
+- Fat: ${meal.fat}g
+
+User adjustment: "${message}"
+
+Please recalculate the macros based on this adjustment. Respond ONLY with a JSON object (no markdown, no backticks) in this format:
+{
+  "calories": number,
+  "protein": number,
+  "carbs": number,
+  "fat": number,
+  "explanation": "brief explanation of changes"
+}`
+                            }
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                const text = data.content.map(i => i.text || "").join("\n").trim();
+                const updated = JSON.parse(text);
+
+                meal.calories = updated.calories;
+                meal.protein = updated.protein;
+                meal.carbs = updated.carbs;
+                meal.fat = updated.fat;
+                meal.notes = message;
+
+                meal.chatHistory.push({ role: 'assistant', content: updated.explanation });
+
+                document.getElementById('editCalories').value = updated.calories;
+                document.getElementById('editProtein').value = updated.protein;
+                document.getElementById('editCarbs').value = updated.carbs;
+                document.getElementById('editFat').value = updated.fat;
+
+                chatMessages.innerHTML += `<div class="chat-message assistant">${updated.explanation}</div>`;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                saveToStorage();
+            } catch (error) {
+                console.error('Chat error:', error);
+                alert('Error processing your message. Please try again.');
+            }
+        }
+
+        function saveEditedMeal() {
+            const result = findMeal(editingMealId);
+            if (!result) return;
+
+            result.meal.name = document.getElementById('editName').value;
+            result.meal.calories = parseFloat(document.getElementById('editCalories').value);
+            result.meal.protein = parseFloat(document.getElementById('editProtein').value);
+            result.meal.carbs = parseFloat(document.getElementById('editCarbs').value);
+            result.meal.fat = parseFloat(document.getElementById('editFat').value);
+
+            saveToStorage();
+            closeModal('editMealModal');
+            renderDailyMeals();
+            updateDailySummary();
+        }
+
+        function renderFavorites() {
+            const container = document.getElementById('favorites-list');
+
+            if (favorites.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⭐</div>
+                        <p>No favorite meals yet</p>
+                        <p style="font-size: 14px; margin-top: 8px;">Star meals from your daily log to save them here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = favorites.map((meal, index) => `
+                <div class="favorite-card" onclick="addFavoriteToDay(${index})">
+                    <button class="remove-favorite" onclick="event.stopPropagation(); removeFavorite(${index})" title="Remove from favorites">×</button>
+                    <h4>${meal.name}</h4>
+                    <div class="meal-macros">
+                        <div class="macro">
+                            <span class="macro-label">Cal:</span>
+                            <span class="macro-value">${Math.round(meal.calories)}</span>
+                        </div>
+                        <div class="macro">
+                            <span class="macro-label">P:</span>
+                            <span class="macro-value">${Math.round(meal.protein)}g</span>
+                        </div>
+                    </div>
+                    <div class="meal-macros">
+                        <div class="macro">
+                            <span class="macro-label">C:</span>
+                            <span class="macro-value">${Math.round(meal.carbs)}g</span>
+                        </div>
+                        <div class="macro">
+                            <span class="macro-label">F:</span>
+                            <span class="macro-value">${Math.round(meal.fat)}g</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addFavoriteToDay(index) {
+            const favMeal = favorites[index];
+            const timeBlocks = ['morning', 'afternoon', 'evening'];
+            const selectedBlock = prompt(`Add to which time block?\n1. Morning\n2. Afternoon\n3. Evening\n\nEnter 1, 2, or 3:`);
+
+            if (!selectedBlock || !['1', '2', '3'].includes(selectedBlock)) return;
+
+            const timeBlock = timeBlocks[parseInt(selectedBlock) - 1];
+            const dateKey = getDateKey();
+
+            if (!dailyData[dateKey]) {
+                dailyData[dateKey] = { morning: [], afternoon: [], evening: [] };
+            }
+
+            const newMeal = {
+                ...favMeal,
+                id: Date.now().toString(),
+                isFavorite: true
+            };
+
+            dailyData[dateKey][timeBlock].push(newMeal);
+            saveToStorage();
+
+            switchTab('daily');
+            document.querySelectorAll('.tab')[0].click();
+            renderDailyMeals();
+            updateDailySummary();
+        }
+
+        function removeFavorite(index) {
+            if (!confirm('Remove this meal from favorites?')) return;
+            favorites.splice(index, 1);
+            saveToStorage();
+            renderFavorites();
+            renderDailyMeals();
+        }
+
+        init();
+    </script>
+</body>
+</html>
