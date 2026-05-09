@@ -843,7 +843,8 @@ Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this
                 });
 
                 const data = await response.json();
-                const text = data.content.map(i => i.text || "").join("\n").trim();
+                const text = data.content.map(i => i.text || "").join("\n").trim()
+                    .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
                 const macros = JSON.parse(text);
 
                 const dateKey = getDateKey();
@@ -1094,7 +1095,8 @@ Please recalculate the macros based on this adjustment. Respond ONLY with a JSON
                 });
 
                 const data = await response.json();
-                const text = data.content.map(i => i.text || "").join("\n").trim();
+                const text = data.content.map(i => i.text || "").join("\n").trim()
+                    .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
                 const updated = JSON.parse(text);
 
                 meal.calories = updated.calories;
