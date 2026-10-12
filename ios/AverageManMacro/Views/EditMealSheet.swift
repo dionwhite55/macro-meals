@@ -43,6 +43,11 @@ struct EditMealSheet: View {
                         TextField("e.g. I only ate half", text: $chatInput)
                             .onSubmit { send() }
                             .submitLabel(.send)
+                            .onChange(of: chatInput) { _, newValue in
+                                if newValue.count > MacroService.maxRequestLength {
+                                    chatInput = String(newValue.prefix(MacroService.maxRequestLength))
+                                }
+                            }
                         if isWorking {
                             ProgressView()
                         } else {

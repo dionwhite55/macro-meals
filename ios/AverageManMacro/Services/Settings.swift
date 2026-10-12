@@ -3,31 +3,51 @@ import Security
 
 /// How the app reaches Claude.
 enum ConnectionMode: String, CaseIterable, Identifiable {
-    /// Through the existing Netlify function (`/api/chat`), which holds the API key server-side.
+    /// Through the Netlify function (`/api/chat`), which holds the API key server-side.
     case server
-    /// Directly to the Anthropic API with a key stored in this device's Keychain.
+    /// Directly to the Anthropic API with a key stored in this device's Keychain. Debug builds only.
     case apiKey
 
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .server: "My Netlify site"
+        case .server: "Netlify server"
         case .apiKey: "My own API key"
         }
+    }
+
+    /// TestFlight and App Store builds only ever use the server.
+    static var available: [ConnectionMode] {
+        #if DEBUG
+        allCases
+        #else
+        [.server]
+        #endif
     }
 }
 
 enum AppSettings {
+    /// The deployed Netlify site that hosts `/api/chat`. Set this before shipping a beta,
+    /// e.g. "https://your-site.netlify.app".
+    static let defaultServerURL = ""
+
     static let modeKey = "connectionMode"
     static let serverURLKey = "serverURL"
     static let apiKeyAccount = "anthropicAPIKey"
 
     static var mode: ConnectionMode {
-        ConnectionMode(rawValue: UserDefaults.standard.string(forKey: modeKey) ?? "") ?? .server
+        let stored = ConnectionMode(rawValue: UserDefaults.standard.string(forKey: modeKey) ?? "") ?? .server
+        return ConnectionMode.available.contains(stored) ? stored : .server
     }
 
+    /// The server URL override from Settings (debug builds), falling back to the built-in one.
     static var serverURL: String {
-        UserDefaults.standard.string(forKey: serverURLKey) ?? ""
+        #if DEBUG
+        let override = UserDefaults.standard.string(forKey: serverURLKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !override.isEmpty { return override }
+        #endif
+        return defaultServerURL
     }
 
     static var apiKey: String? {
@@ -62,7 +82,8 @@ enum Keychain {
         guard let value, !value.isEmpty else { return }
         var attributes = query
         attributes[kSecValueData as String] = Data(value.utf8)
-        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        // Never leaves this device: excluded from backups and device-to-device transfers.
+        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         SecItemAdd(attributes as CFDictionary, nil)
     }
 }

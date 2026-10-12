@@ -27,6 +27,11 @@ struct AddMealSheet: View {
                               text: $description, axis: .vertical)
                         .lineLimit(3...8)
                         .focused($focused)
+                        .onChange(of: description) { _, newValue in
+                            if newValue.count > MacroService.maxDescriptionLength {
+                                description = String(newValue.prefix(MacroService.maxDescriptionLength))
+                            }
+                        }
                 } header: {
                     Text("What did you eat?")
                 } footer: {
