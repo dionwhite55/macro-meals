@@ -122,7 +122,8 @@ struct EditMealSheet: View {
         let request = chatInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !request.isEmpty, !isWorking else { return }
         chatInput = ""
-        meal.chatHistory.append(ChatMessage(role: .user, content: request))
+        let message = ChatMessage(role: .user, content: request)
+        meal.chatHistory.append(message)
         isWorking = true
 
         Task {
@@ -133,6 +134,9 @@ struct EditMealSheet: View {
                 meal.notes = request
                 meal.chatHistory.append(ChatMessage(role: .assistant, content: result.explanation ?? "Updated."))
             } catch {
+                // Don't leave an unanswered message in the history; give the text back to edit.
+                meal.chatHistory.removeAll { $0.id == message.id }
+                chatInput = request
                 errorMessage = error.localizedDescription
             }
         }
