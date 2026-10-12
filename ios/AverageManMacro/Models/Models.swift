@@ -60,6 +60,8 @@ final class Meal {
     var day: Date
     var createdAt: Date
     var chatHistory: [ChatMessage]
+    /// The favorite this meal was saved as or logged from; the meal shows a star while set.
+    @Relationship(deleteRule: .nullify) var favorite: FavoriteMeal?
 
     init(name: String, macros: Macros, originalDescription: String, timeBlock: TimeBlock, day: Date) {
         self.name = name
@@ -103,19 +105,34 @@ final class FavoriteMeal {
     var fiber: Double
     var originalDescription: String
     var createdAt: Date
+    /// Last time this favorite was saved or logged; the Favorites list sorts by it.
+    var lastUsedAt: Date = Date.now
+    @Relationship(deleteRule: .nullify, inverse: \Meal.favorite) var meals: [Meal] = []
 
-    init(from meal: Meal) {
-        self.name = meal.name
-        self.calories = meal.calories
-        self.protein = meal.protein
-        self.carbs = meal.carbs
-        self.fat = meal.fat
-        self.fiber = meal.fiber
-        self.originalDescription = meal.originalDescription
+    init(name: String, macros: Macros, originalDescription: String) {
+        self.name = name
+        self.calories = macros.calories
+        self.protein = macros.protein
+        self.carbs = macros.carbs
+        self.fat = macros.fat
+        self.fiber = macros.fiber
+        self.originalDescription = originalDescription
         self.createdAt = .now
+        self.lastUsedAt = .now
+    }
+
+    convenience init(from meal: Meal) {
+        self.init(name: meal.name, macros: meal.macros, originalDescription: meal.originalDescription)
     }
 
     var macros: Macros {
-        Macros(calories: calories, protein: protein, carbs: carbs, fat: fat, fiber: fiber)
+        get { Macros(calories: calories, protein: protein, carbs: carbs, fat: fat, fiber: fiber) }
+        set {
+            calories = newValue.calories
+            protein = newValue.protein
+            carbs = newValue.carbs
+            fat = newValue.fat
+            fiber = newValue.fiber
+        }
     }
 }

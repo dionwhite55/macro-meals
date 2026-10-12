@@ -14,6 +14,7 @@ struct AverageManMacroApp: App {
 struct ContentView: View {
     enum Tab { case log, favorites, settings }
 
+    @Environment(\.modelContext) private var context
     @State private var tab = Tab.log
     @State private var day = Calendar.current.startOfDay(for: .now)
 
@@ -31,5 +32,8 @@ struct ContentView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(Tab.settings)
         }
+        #if DEBUG
+        .task { SampleData.seedFavoritesIfRequested(in: context) }
+        #endif
     }
 }

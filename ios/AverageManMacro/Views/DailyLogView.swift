@@ -51,9 +51,10 @@ private struct DayContent: View {
 
     @Environment(\.modelContext) private var context
     @Query private var meals: [Meal]
-    @Query private var favorites: [FavoriteMeal]
     @State private var addingTo: TimeBlock?
     @State private var editing: Meal?
+    @State private var recentlyDeleted: DeletedMeal?
+    @State private var favoriteTaps = 0
 
     init(day: Date) {
         self.day = day
@@ -61,7 +62,6 @@ private struct DayContent: View {
     }
 
     private var totals: Macros { meals.reduce(.zero) { $0 + $1.macros } }
-    private var favoriteNames: Set<String> { Set(favorites.map(\.name)) }
 
     var body: some View {
         List {
@@ -70,21 +70,33 @@ private struct DayContent: View {
                 Section {
                     ForEach(blockMeals) { meal in
                         Button { editing = meal } label: {
-                            MealRow(meal: meal, isFavorite: favoriteNames.contains(meal.name))
+                            MealRow(meal: meal)
                         }
                         .tint(.primary)
                         .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) { context.delete(meal) } label: {
+                            Button(role: .destructive) { delete(meal) } label: {
                                 Label("Delete", systemImage: "trash")
                             }
                         }
                         .swipeActions(edge: .leading) {
-                            let isFavorite = favoriteNames.contains(meal.name)
                             Button { toggleFavorite(meal) } label: {
-                                Label(isFavorite ? "Unfavorite" : "Favorite",
-                                      systemImage: isFavorite ? "star.slash" : "star")
+                                Label(meal.isFavorite ? "Unfavorite" : "Favorite",
+                                      systemImage: meal.isFavorite ? "star.slash" : "star")
                             }
                             .tint(.yellow)
+                        }
+                        .contextMenu {
+                            Button { toggleFavorite(meal) } label: {
+                                Label(meal.isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                                      systemImage: meal.isFavorite ? "star.slash" : "star")
+                            }
+                            Button { meal.logAgain(in: context, on: day) } label: {
+                                Label("Log Again", systemImage: "plus.square.on.square")
+                            }
+                            Divider()
+                            Button(role: .destructive) { delete(meal) } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
                         }
                     }
                     Button { addingTo = block } label: {
@@ -111,6 +123,21 @@ private struct DayContent: View {
                 .background(.bar)
                 .overlay(alignment: .bottom) { Divider() }
         }
+        .safeAreaInset(edge: .bottom) {
+            if let deleted = recentlyDeleted {
+                UndoBanner(text: "Deleted \(deleted.name)") {
+                    deleted.restore(in: context)
+                    withAnimation { recentlyDeleted = nil }
+                }
+                .padding(.bottom, 8)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .task(id: deleted.id) {
+                    try? await Task.sleep(for: .seconds(8))
+                    withAnimation { if recentlyDeleted?.id == deleted.id { recentlyDeleted = nil } }
+                }
+            }
+        }
+        .sensoryFeedback(.selection, trigger: favoriteTaps)
         .sheet(item: $addingTo) { block in
             AddMealSheet(day: day, block: block)
         }
@@ -120,11 +147,13 @@ private struct DayContent: View {
     }
 
     private func toggleFavorite(_ meal: Meal) {
-        let matches = favorites.filter { $0.name == meal.name }
-        if matches.isEmpty {
-            context.insert(FavoriteMeal(from: meal))
-        } else {
-            matches.forEach(context.delete)
-        }
+        meal.toggleFavorite(in: context)
+        favoriteTaps += 1
+    }
+
+    private func delete(_ meal: Meal) {
+        let snapshot = DeletedMeal(meal)
+        context.delete(meal)
+        withAnimation { recentlyDeleted = snapshot }
     }
 }
