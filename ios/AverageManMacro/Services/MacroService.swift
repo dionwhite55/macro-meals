@@ -91,7 +91,7 @@ enum MacroService {
             User adjustment: "\(request)"
 
             Recalculate the macros with this adjustment. \(guidance) \
-            In explanation, briefly say what changed in one sentence.
+            In explanation, tell the user in one short sentence what changed, speaking to them as "you".
             """
             return try await callClaude(prompt: prompt, includeName: false, includeExplanation: true)
         }
