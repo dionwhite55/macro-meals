@@ -6,6 +6,7 @@ struct AddMealSheet: View {
 
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Query(sort: \FavoriteMeal.lastUsedAt, order: .reverse) private var favorites: [FavoriteMeal]
     @State private var block: TimeBlock
     @State private var description = ""
     @State private var isWorking = false
@@ -19,13 +20,19 @@ struct AddMealSheet: View {
 
     private var trimmed: String { description.trimmingCharacters(in: .whitespacesAndNewlines) }
 
+    /// Favorites matching what's been typed so far (all of them when nothing is typed).
+    private var matchingFavorites: [FavoriteMeal] {
+        guard !trimmed.isEmpty else { return favorites }
+        return favorites.filter { $0.name.localizedCaseInsensitiveContains(trimmed) }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     TextField("e.g. 2 scrambled eggs, spinach, toast with butter",
                               text: $description, axis: .vertical)
-                        .lineLimit(3...8)
+                        .lineLimit(2...8)
                         .focused($focused)
                         .onChange(of: description) { _, newValue in
                             if newValue.count > MacroService.maxDescriptionLength {
@@ -43,6 +50,26 @@ struct AddMealSheet: View {
                         ForEach(TimeBlock.allCases) { Text($0.title).tag($0) }
                     }
                     .pickerStyle(.segmented)
+                }
+
+                if !matchingFavorites.isEmpty {
+                    Section {
+                        ForEach(matchingFavorites) { favorite in
+                            Button { logFavorite(favorite) } label: {
+                                FavoriteRow(favorite: favorite) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title2)
+                                        .foregroundStyle(Color.accentColor)
+                                }
+                            }
+                            .tint(.primary)
+                            .accessibilityHint("Adds to \(block.title.lowercased()) without an estimate")
+                        }
+                    } header: {
+                        Text(trimmed.isEmpty ? "Or pick a favorite" : "Matching favorites")
+                    } footer: {
+                        Text("Tap to log it instantly in \(block.title.lowercased()).")
+                    }
                 }
             }
             .disabled(isWorking)
@@ -66,10 +93,16 @@ struct AddMealSheet: View {
             } message: {
                 Text(errorMessage ?? "")
             }
-            .onAppear { focused = true }
+            // With favorites to pick from, don't cover them with the keyboard straight away.
+            .onAppear { focused = favorites.isEmpty }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents(favorites.isEmpty ? [.medium, .large] : [.large])
         .interactiveDismissDisabled(isWorking)
+    }
+
+    private func logFavorite(_ favorite: FavoriteMeal) {
+        favorite.log(in: context, block: block, day: day)
+        dismiss()
     }
 
     private func estimate() async {

@@ -60,6 +60,8 @@ final class Meal {
     var day: Date
     var createdAt: Date
     var chatHistory: [ChatMessage]
+    /// The favorite this meal was saved as or logged from; the meal shows a star while set.
+    @Relationship(deleteRule: .nullify) var favorite: FavoriteMeal?
 
     init(name: String, macros: Macros, originalDescription: String, timeBlock: TimeBlock, day: Date) {
         self.name = name
@@ -103,6 +105,9 @@ final class FavoriteMeal {
     var fiber: Double
     var originalDescription: String
     var createdAt: Date
+    /// Last time this favorite was saved or logged; the Favorites list sorts by it.
+    var lastUsedAt: Date = Date.now
+    @Relationship(deleteRule: .nullify, inverse: \Meal.favorite) var meals: [Meal] = []
 
     init(from meal: Meal) {
         self.name = meal.name
@@ -113,9 +118,17 @@ final class FavoriteMeal {
         self.fiber = meal.fiber
         self.originalDescription = meal.originalDescription
         self.createdAt = .now
+        self.lastUsedAt = .now
     }
 
     var macros: Macros {
-        Macros(calories: calories, protein: protein, carbs: carbs, fat: fat, fiber: fiber)
+        get { Macros(calories: calories, protein: protein, carbs: carbs, fat: fat, fiber: fiber) }
+        set {
+            calories = newValue.calories
+            protein = newValue.protein
+            carbs = newValue.carbs
+            fat = newValue.fat
+            fiber = newValue.fiber
+        }
     }
 }

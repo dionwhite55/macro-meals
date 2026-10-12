@@ -4,10 +4,12 @@ import SwiftData
 struct EditMealSheet: View {
     @Bindable var meal: Meal
 
+    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var chatInput = ""
     @State private var isWorking = false
     @State private var errorMessage: String?
+    @State private var confirmingDelete = false
 
     var body: some View {
         NavigationStack {
@@ -28,9 +30,19 @@ struct EditMealSheet: View {
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
                         } label: {
-                            Text(kind.unit.isEmpty ? kind.label : "\(kind.label) (g)")
+                            Text(kind.fieldLabel)
                                 .foregroundStyle(kind.color)
                         }
+                    }
+                }
+
+                if meal.differsFromFavorite, let favorite = meal.favorite {
+                    Section {
+                        Button("Update Favorite to Match") {
+                            withAnimation { favorite.update(from: meal) }
+                        }
+                    } footer: {
+                        Text("Your saved favorite still has its original name and numbers. Next time you log it, it'll use those unless you update it.")
                     }
                 }
 
@@ -70,10 +82,30 @@ struct EditMealSheet: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+
+                Section {
+                    Button("Delete Meal", role: .destructive) { confirmingDelete = true }
+                        .frame(maxWidth: .infinity)
+                        .confirmationDialog("Delete \(meal.name)?", isPresented: $confirmingDelete,
+                                            titleVisibility: .visible) {
+                            Button("Delete Meal", role: .destructive) {
+                                dismiss()
+                                context.delete(meal)
+                            }
+                        }
+                }
             }
             .navigationTitle("Edit Meal")
             .navigationBarTitleDisplayMode(.inline)
+            .sensoryFeedback(.selection, trigger: meal.isFavorite)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { meal.toggleFavorite(in: context) } label: {
+                        Image(systemName: meal.isFavorite ? "star.fill" : "star")
+                            .foregroundStyle(meal.isFavorite ? .yellow : .secondary)
+                    }
+                    .accessibilityLabel(meal.isFavorite ? "Remove from Favorites" : "Add to Favorites")
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }

@@ -56,6 +56,18 @@ enum MacroKind: CaseIterable, Identifiable {
         case .fiber: \.fiber
         }
     }
+
+    var favoriteKeyPath: ReferenceWritableKeyPath<FavoriteMeal, Double> {
+        switch self {
+        case .calories: \.calories
+        case .protein: \.protein
+        case .carbs: \.carbs
+        case .fat: \.fat
+        case .fiber: \.fiber
+        }
+    }
+
+    var fieldLabel: String { unit.isEmpty ? label : "\(label) (g)" }
 }
 
 extension TimeBlock {
@@ -130,14 +142,53 @@ struct MacroLine: View {
     }
 }
 
+/// A favorite in a list: name, macros, and an optional trailing accessory.
+struct FavoriteRow<Accessory: View>: View {
+    let favorite: FavoriteMeal
+    @ViewBuilder var accessory: Accessory
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(favorite.name).font(.body.weight(.semibold))
+                MacroLine(macros: favorite.macros)
+            }
+            Spacer(minLength: 0)
+            accessory
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+/// "Deleted X · Undo" banner shown briefly after a meal is deleted.
+struct UndoBanner: View {
+    let text: String
+    let undo: () -> Void
+
+    var body: some View {
+        HStack {
+            Text(text)
+                .font(.subheadline)
+                .lineLimit(1)
+            Spacer()
+            Button("Undo", action: undo)
+                .font(.subheadline.weight(.semibold))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.regularMaterial, in: .capsule)
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+        .padding(.horizontal, 16)
+    }
+}
+
 struct MealRow: View {
     let meal: Meal
-    let isFavorite: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 5) {
-                if isFavorite {
+                if meal.isFavorite {
                     Image(systemName: "star.fill")
                         .font(.caption)
                         .foregroundStyle(.yellow)
