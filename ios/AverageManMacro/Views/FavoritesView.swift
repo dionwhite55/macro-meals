@@ -8,6 +8,7 @@ struct FavoritesView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \FavoriteMeal.lastUsedAt, order: .reverse) private var favorites: [FavoriteMeal]
     @State private var editing: FavoriteMeal?
+    @State private var searchText = ""
 
     private var dayLabel: String {
         Calendar.current.isDateInToday(day)
@@ -15,12 +16,15 @@ struct FavoritesView: View {
             : day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
     }
 
+    private var query: String { searchText.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var shown: [FavoriteMeal] { favorites.filter { $0.matches(query) } }
+
     var body: some View {
         NavigationStack {
             List {
-                if !favorites.isEmpty {
+                if !shown.isEmpty {
                     Section {
-                        ForEach(favorites) { favorite in
+                        ForEach(shown) { favorite in
                             Button { editing = favorite } label: {
                                 FavoriteRow(favorite: favorite) {
                                     Menu {
@@ -42,7 +46,12 @@ struct FavoritesView: View {
                             .tint(.primary)
                         }
                         .onDelete { offsets in
-                            offsets.map { favorites[$0] }.forEach(context.delete)
+                            let visible = shown
+                            offsets.map { visible[$0] }.forEach(context.delete)
+                        }
+                    } header: {
+                        if !query.isEmpty {
+                            Text("\(shown.count) of \(favorites.count)")
                         }
                     } footer: {
                         Text("Tap + to add a favorite to \(dayLabel)'s log. Tap a favorite to edit it.")
@@ -56,8 +65,12 @@ struct FavoritesView: View {
                         systemImage: "star",
                         description: Text("Open a meal in your log and tap the star, or press and hold a meal and choose Add to Favorites.")
                     )
+                } else if shown.isEmpty {
+                    ContentUnavailableView.search(text: query)
                 }
             }
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "Search favorites")
             .navigationTitle("Favorites")
             .sheet(item: $editing) { favorite in
                 EditFavoriteSheet(favorite: favorite)
@@ -67,6 +80,7 @@ struct FavoritesView: View {
 
     private func add(_ favorite: FavoriteMeal, to block: TimeBlock) {
         favorite.log(in: context, block: block, day: day)
+        searchText = ""
         onAdded()
     }
 }

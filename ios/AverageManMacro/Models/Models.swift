@@ -109,16 +109,20 @@ final class FavoriteMeal {
     var lastUsedAt: Date = Date.now
     @Relationship(deleteRule: .nullify, inverse: \Meal.favorite) var meals: [Meal] = []
 
-    init(from meal: Meal) {
-        self.name = meal.name
-        self.calories = meal.calories
-        self.protein = meal.protein
-        self.carbs = meal.carbs
-        self.fat = meal.fat
-        self.fiber = meal.fiber
-        self.originalDescription = meal.originalDescription
+    init(name: String, macros: Macros, originalDescription: String) {
+        self.name = name
+        self.calories = macros.calories
+        self.protein = macros.protein
+        self.carbs = macros.carbs
+        self.fat = macros.fat
+        self.fiber = macros.fiber
+        self.originalDescription = originalDescription
         self.createdAt = .now
         self.lastUsedAt = .now
+    }
+
+    convenience init(from meal: Meal) {
+        self.init(name: meal.name, macros: meal.macros, originalDescription: meal.originalDescription)
     }
 
     var macros: Macros {

@@ -20,10 +20,21 @@ struct AddMealSheet: View {
 
     private var trimmed: String { description.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-    /// Favorites matching what's been typed so far (all of them when nothing is typed).
+    /// How many recent favorites to suggest before anything is typed.
+    private let recentLimit = 5
+
+    /// Favorites matching what's been typed so far, or the most recent few when nothing is typed.
     private var matchingFavorites: [FavoriteMeal] {
-        guard !trimmed.isEmpty else { return favorites }
-        return favorites.filter { $0.name.localizedCaseInsensitiveContains(trimmed) }
+        guard !trimmed.isEmpty else { return Array(favorites.prefix(recentLimit)) }
+        return favorites.filter { $0.matches(trimmed) }
+    }
+
+    private var favoritesFooter: String {
+        let tapHint = "Tap to log it instantly in \(block.title.lowercased())."
+        if trimmed.isEmpty && favorites.count > recentLimit {
+            return "Showing your \(recentLimit) most recent. Start typing to search all \(favorites.count). " + tapHint
+        }
+        return tapHint
     }
 
     var body: some View {
@@ -66,9 +77,9 @@ struct AddMealSheet: View {
                             .accessibilityHint("Adds to \(block.title.lowercased()) without an estimate")
                         }
                     } header: {
-                        Text(trimmed.isEmpty ? "Or pick a favorite" : "Matching favorites")
+                        Text(trimmed.isEmpty ? "Or pick a recent favorite" : "Matching favorites")
                     } footer: {
-                        Text("Tap to log it instantly in \(block.title.lowercased()).")
+                        Text(favoritesFooter)
                     }
                 }
             }

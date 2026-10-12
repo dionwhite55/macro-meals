@@ -61,6 +61,14 @@ extension FavoriteMeal {
         name = meal.name
         macros = meal.macros
     }
+
+    /// True when every word of `query` appears in the name or what was originally typed,
+    /// in any order, ignoring case and accents. An empty query matches everything.
+    func matches(_ query: String) -> Bool {
+        let words = query.split(whereSeparator: \.isWhitespace)
+        let text = name + " " + originalDescription
+        return words.allSatisfy { text.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+    }
 }
 
 /// Enough of a deleted meal to put it back if the user taps Undo.
