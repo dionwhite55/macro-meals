@@ -55,7 +55,7 @@ enum AppSettings {
 }
 
 enum Keychain {
-    private static let service = "com.dionwhite.AverageManMacro"
+    private static let service = "com.dion.averagemanmacro"
 
     static func get(_ account: String) -> String? {
         let query: [String: Any] = [
