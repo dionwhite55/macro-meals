@@ -12,7 +12,7 @@ struct AverageManMacroApp: App {
 }
 
 struct ContentView: View {
-    enum Tab { case log, favorites, settings }
+    enum Tab { case log, summary, favorites, settings }
 
     @Environment(\.modelContext) private var context
     @State private var tab = Tab.log
@@ -24,6 +24,13 @@ struct ContentView: View {
                 .tabItem { Label("Log", systemImage: "fork.knife") }
                 .tag(Tab.log)
 
+            SummaryView { selected in
+                day = selected
+                tab = .log
+            }
+            .tabItem { Label("Summary", systemImage: "calendar") }
+            .tag(Tab.summary)
+
             FavoritesView(day: day) { tab = .log }
                 .tabItem { Label("Favorites", systemImage: "star") }
                 .tag(Tab.favorites)
@@ -33,7 +40,7 @@ struct ContentView: View {
                 .tag(Tab.settings)
         }
         #if DEBUG
-        .task { SampleData.seedFavoritesIfRequested(in: context) }
+        .task { SampleData.seedIfRequested(in: context) }
         #endif
     }
 }

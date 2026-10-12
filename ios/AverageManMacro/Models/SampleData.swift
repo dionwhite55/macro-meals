@@ -2,12 +2,14 @@
 import Foundation
 import SwiftData
 
-/// Development-only test data. Launch a debug build with `-seedSampleFavorites` to fill an
-/// empty Favorites list, for trying search and long lists. Not compiled into release builds.
+/// Development-only test data. Launch a debug build with `-seedSampleData` on an empty install to
+/// get 30 favorites and ~7 weeks of logged meals (some days skipped), for trying search and the
+/// monthly summary. Not compiled into release builds.
 enum SampleData {
-    static func seedFavoritesIfRequested(in context: ModelContext) {
-        guard ProcessInfo.processInfo.arguments.contains("-seedSampleFavorites"),
-              (try? context.fetchCount(FetchDescriptor<FavoriteMeal>())) == 0 else { return }
+    static func seedIfRequested(in context: ModelContext) {
+        guard ProcessInfo.processInfo.arguments.contains("-seedSampleData"),
+              (try? context.fetchCount(FetchDescriptor<FavoriteMeal>())) == 0,
+              (try? context.fetchCount(FetchDescriptor<Meal>())) == 0 else { return }
 
         let samples: [(String, String, Macros)] = [
             ("Greek Yogurt Parfait", "greek yogurt with granola and blueberries", .init(calories: 420, protein: 20, carbs: 58, fat: 12, fiber: 6)),
@@ -42,10 +44,24 @@ enum SampleData {
             ("Beer (2)", "two pints of IPA", .init(calories: 400, protein: 4, carbs: 30, fat: 0, fiber: 0)),
         ]
 
+        var favorites: [FavoriteMeal] = []
         for (index, sample) in samples.enumerated() {
             let favorite = FavoriteMeal(name: sample.0, macros: sample.2, originalDescription: sample.1)
             favorite.lastUsedAt = Date.now.addingTimeInterval(Double(-index) * 3600)
             context.insert(favorite)
+            favorites.append(favorite)
+        }
+
+        // Past 50 days (not today), skipping every 5th day and a couple of others, 2-3 meals each.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        for daysAgo in 1...50 where daysAgo % 5 != 0 && daysAgo != 13 && daysAgo != 22 {
+            guard let day = calendar.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
+            favorites[daysAgo % 8].log(in: context, block: .morning, day: day)
+            favorites[8 + daysAgo % 12].log(in: context, block: .afternoon, day: day)
+            if daysAgo % 3 != 0 {
+                favorites[20 + daysAgo % 10].log(in: context, block: .evening, day: day)
+            }
         }
     }
 }
