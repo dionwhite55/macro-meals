@@ -3,41 +3,15 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 
-// Block sensitive files from being served as static assets
-app.use((req, res, next) => {
-    const blocked = ['.env', 'server.js', 'package.json', 'package-lock.json'];
-    if (blocked.some(f => req.path === '/' + f)) {
-        return res.status(404).end();
-    }
-    next();
-});
-
-app.use(express.static(path.join(__dirname)));
+// Only the public/ folder is served; server code and config stay private.
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/api/chat', async (req, res) => {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in .env' });
-    }
-
-    try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify(req.body)
-        });
-
-        const data = await response.json();
-        res.status(response.status).json(data);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    const { handleMacroRequest } = await import('./lib/macro-api.mjs');
+    const result = await handleMacroRequest(req.body, process.env.ANTHROPIC_API_KEY);
+    res.status(result.status).json(result.body);
 });
 
 const PORT = process.env.PORT || 3000;

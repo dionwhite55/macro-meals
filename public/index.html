@@ -716,7 +716,7 @@
             </div>
             <div class="form-group">
                 <label>What did you eat?</label>
-                <textarea id="mealDescription" placeholder="e.g., 2 scrambled eggs, spinach, toast with butter"></textarea>
+                <textarea id="mealDescription" maxlength="500" placeholder="e.g., 2 scrambled eggs, spinach, toast with butter"></textarea>
             </div>
             <button class="btn-primary" onclick="calculateMacros()" id="calculateBtn">Calculate Macros</button>
             <div id="calculatingLoader" class="loading" style="display: none;">
@@ -765,6 +765,28 @@
         function saveToStorage() {
             localStorage.setItem('macroTrackerData', JSON.stringify(dailyData));
             localStorage.setItem('macroTrackerFavorites', JSON.stringify(favorites));
+        }
+
+        // Escapes text before it goes into innerHTML (meal names, notes, and model replies).
+        function esc(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c]);
+        }
+
+        async function callMacroApi(payload) {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(response.status === 429
+                    ? 'Too many requests. Wait a minute and try again.'
+                    : data.error || 'Something went wrong. Please try again.');
+            }
+            return data;
         }
 
         function getDateKey() {
@@ -818,34 +840,7 @@
             loader.style.display = 'block';
 
             try {
-                const response = await fetch("/api/chat", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        model: "claude-haiku-4-5-20251001",
-                        max_tokens: 1000,
-                        messages: [{
-                            role: "user",
-                            content: `Analyze this meal and provide nutritional estimates for a typical serving size: "${description}"
-
-Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this exact format:
-{
-  "name": "brief meal name",
-  "calories": number,
-  "protein": number,
-  "carbs": number,
-  "fat": number
-}`
-                        }]
-                    })
-                });
-
-                const data = await response.json();
-                const text = data.content.map(i => i.text || "").join("\n").trim()
-                    .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-                const macros = JSON.parse(text);
+                const macros = await callMacroApi({ type: 'estimate', description });
 
                 const dateKey = getDateKey();
                 if (!dailyData[dateKey]) {
@@ -867,7 +862,7 @@ Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this
                 renderDailyMeals();
                 updateDailySummary();
             } catch (error) {
-                alert('Error calculating macros. Please try again.');
+                alert(error.message || 'Error calculating macros. Please try again.');
                 console.error(error);
             } finally {
                 btn.style.display = 'block';
@@ -892,7 +887,7 @@ Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this
                     <div class="meal-item">
                         <div class="meal-header">
                             <div class="meal-name">
-                                ${meal.isFavorite ? '⭐ ' : ''}${meal.name}
+                                ${meal.isFavorite ? '⭐ ' : ''}${esc(meal.name)}
                             </div>
                             <div class="meal-actions">
                                 <button class="icon-btn" onclick="toggleFavorite('${meal.id}')" title="${meal.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
@@ -920,7 +915,7 @@ Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this
                                 <span class="macro-value">${Math.round(meal.fat)}g</span>
                             </div>
                         </div>
-                        ${meal.notes ? `<div class="meal-notes">${meal.notes}</div>` : ''}
+                        ${meal.notes ? `<div class="meal-notes">${esc(meal.notes)}</div>` : ''}
                     </div>
                 `).join('');
             });
@@ -1007,7 +1002,7 @@ Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this
             document.getElementById('editMealContent').innerHTML = `
                 <div class="form-group">
                     <label>Meal Name</label>
-                    <input type="text" id="editName" value="${meal.name}">
+                    <input type="text" id="editName" value="${esc(meal.name)}">
                 </div>
                 <div class="form-group">
                     <label>Calories</label>
@@ -1029,11 +1024,11 @@ Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this
                     <h4 style="margin-bottom: 10px;">Chat to adjust</h4>
                     <div class="chat-messages" id="chatMessages">
                         ${meal.chatHistory ? meal.chatHistory.map(msg => `
-                            <div class="chat-message ${msg.role}">${msg.content}</div>
+                            <div class="chat-message ${esc(msg.role)}">${esc(msg.content)}</div>
                         `).join('') : ''}
                     </div>
                     <div class="chat-input-group">
-                        <input type="text" id="chatInput" placeholder="e.g., I only ate half, or add 1 tbsp olive oil">
+                        <input type="text" id="chatInput" maxlength="300" placeholder="e.g., I only ate half, or add 1 tbsp olive oil">
                         <button class="chat-send-btn" onclick="sendChatMessage()">Send</button>
                     </div>
                 </div>
@@ -1058,51 +1053,28 @@ Respond ONLY with a JSON object (no markdown, no backticks, no preamble) in this
             input.value = '';
 
             const chatMessages = document.getElementById('chatMessages');
-            chatMessages.innerHTML += `<div class="chat-message user">${message}</div>`;
+            chatMessages.innerHTML += `<div class="chat-message user">${esc(message)}</div>`;
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
             try {
-                const response = await fetch("/api/chat", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
+                const updated = await callMacroApi({
+                    type: 'adjust',
+                    name: meal.name,
+                    macros: {
+                        calories: meal.calories,
+                        protein: meal.protein,
+                        carbs: meal.carbs,
+                        fat: meal.fat,
+                        fiber: meal.fiber || 0
                     },
-                    body: JSON.stringify({
-                        model: "claude-haiku-4-5-20251001",
-                        max_tokens: 1000,
-                        messages: [
-                            {
-                                role: "user",
-                                content: `Current meal macros:
-- Calories: ${meal.calories}
-- Protein: ${meal.protein}g
-- Carbs: ${meal.carbs}g
-- Fat: ${meal.fat}g
-
-User adjustment: "${message}"
-
-Please recalculate the macros based on this adjustment. Respond ONLY with a JSON object (no markdown, no backticks) in this format:
-{
-  "calories": number,
-  "protein": number,
-  "carbs": number,
-  "fat": number,
-  "explanation": "brief explanation of changes"
-}`
-                            }
-                        ]
-                    })
+                    request: message
                 });
-
-                const data = await response.json();
-                const text = data.content.map(i => i.text || "").join("\n").trim()
-                    .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
-                const updated = JSON.parse(text);
 
                 meal.calories = updated.calories;
                 meal.protein = updated.protein;
                 meal.carbs = updated.carbs;
                 meal.fat = updated.fat;
+                meal.fiber = updated.fiber;
                 meal.notes = message;
 
                 meal.chatHistory.push({ role: 'assistant', content: updated.explanation });
@@ -1112,13 +1084,13 @@ Please recalculate the macros based on this adjustment. Respond ONLY with a JSON
                 document.getElementById('editCarbs').value = updated.carbs;
                 document.getElementById('editFat').value = updated.fat;
 
-                chatMessages.innerHTML += `<div class="chat-message assistant">${updated.explanation}</div>`;
+                chatMessages.innerHTML += `<div class="chat-message assistant">${esc(updated.explanation)}</div>`;
                 chatMessages.scrollTop = chatMessages.scrollHeight;
 
                 saveToStorage();
             } catch (error) {
                 console.error('Chat error:', error);
-                alert('Error processing your message. Please try again.');
+                alert(error.message || 'Error processing your message. Please try again.');
             }
         }
 
@@ -1155,7 +1127,7 @@ Please recalculate the macros based on this adjustment. Respond ONLY with a JSON
             container.innerHTML = favorites.map((meal, index) => `
                 <div class="favorite-card" onclick="addFavoriteToDay(${index})">
                     <button class="remove-favorite" onclick="event.stopPropagation(); removeFavorite(${index})" title="Remove from favorites">×</button>
-                    <h4>${meal.name}</h4>
+                    <h4>${esc(meal.name)}</h4>
                     <div class="meal-macros">
                         <div class="macro">
                             <span class="macro-label">Cal:</span>
