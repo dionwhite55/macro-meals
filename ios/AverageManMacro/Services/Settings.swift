@@ -27,9 +27,8 @@ enum ConnectionMode: String, CaseIterable, Identifiable {
 }
 
 enum AppSettings {
-    /// The deployed Netlify site that hosts `/api/chat`. Set this before shipping a beta,
-    /// e.g. "https://your-site.netlify.app".
-    static let defaultServerURL = ""
+    /// The deployed Netlify site that hosts `/api/chat`.
+    static let defaultServerURL = "https://macro-meals.netlify.app"
 
     static let modeKey = "connectionMode"
     static let serverURLKey = "serverURL"
